@@ -1,0 +1,48 @@
+---
+# redhat variables
+
+capam_device:
+  description: "via Ansible"
+  deviceAccessMethods:
+    - 
+      type: "SSH" # valid types = VNC,Telnet,SSH,RDP,KVM,Embedded VNC,TN3270,TN5250,TN3270SSL,TN5250SSL
+      port: 22
+      taskProperty: "x11forwarding"
+  deviceGroupMembershipIds: ["4"]
+  deviceName: "{{ inventory_hostname }}"
+  deviceServiceIds: ["100","106","101","102","103"] #{ "name": "TCPUDP", "apps": "putty, putty paw, Putty X11, SecureCRT, SecureFX" }
+  domainName: "{{ inventory_hostname }}"
+  location: "{{ capam_server_location }}"
+  os: "{{ ansible_system }}"
+  targetServerDescription1: "TEAM"
+  targetServerDescription2: ""
+  typeAccess: "t"
+  typePassword: "t"
+              
+capam_target_applications:
+  -
+    application:
+      applicationName: "{{ inventory_hostname }}"
+      applicationType: "unixII"
+      attributes:
+        unixVariant: "LINUX"
+      description1: "TEAM"
+      description2: ""
+      passwordCompositionPolicyId: "1008"
+    accounts:
+      -
+        accountName: "root"
+        description1: "TEAM"
+        description2: ""
+        password: "{{ capam_password_root }}"
+        synchronize: "t" # t = true (sync password); f = false (default); not available for 'Generic' target applications
+        privileged: "t" # t = true (privileged account); f = false (app-to-app account)
+        passwordViewPolicyId: "1003"
+        attributes:
+          descriptor1: "TEAM"
+          descriptor2: ""
+          extensionType: "unixII"
+          passwordChangeMethod: "IS_ROOT_ACCOUNT"
+          verifyThroughOtherAccount: "false"
+          useOtherAccountToChangePassword: "false"
+          userGroup: "CN=Systems_Authentication,OU=Groups,OU=Global,DC=example,DC=com"

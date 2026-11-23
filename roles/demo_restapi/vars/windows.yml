@@ -1,0 +1,78 @@
+---
+# windows variables
+
+# extract os family (Windows) and version (2012 or 2016) from ansible_os_name
+capam_ansible_os_name: "{{ ansible_os_name | regex_replace('.*(Windows).* (.\\d+).+','\\1 \\2') }}"
+
+capam_device:
+  description: "via Ansible"
+  deviceAccessMethods:
+    - 
+      type: "RDP"
+      port: 3389
+  deviceGroupMembershipIds: "{{ capam_windows_device_groups }}"
+  deviceName: "{{ inventory_hostname }}"
+  domainName: "{{ inventory_hostname }}"
+  location: "{{ capam_server_location }}"
+  os: "{{ capam_ansible_os_name }}"
+  targetServerDescription1: "ECSWE"
+  typeAccess: "t"
+  typePassword: "t"
+  provisionType: "Local"
+  transparentLoginType: "None"
+
+
+capam_target_applications:
+  -
+    application:
+      applicationName: "{{ inventory_hostname }}_local"
+      applicationType: "Generic"
+      description1: "TEAM"
+      description2: "Infra"
+      passwordCompositionPolicyId: "1004"
+      attributes:
+        agentId: "1007"
+        ldapConnectTimeout: "30000"
+        ldapReadTimeout: "3000"
+        accountType: "local"
+        extensionType: "windows"
+    accounts:
+      -
+        accountName: "mistadmin"
+        description1: "TEAM"
+        description2: ""
+        password: "{{ capam_password_mistadmin_pass }}"
+        synchronize: "f" # t = true (sync password); f = false (default); not available for 'Generic' target applications
+        privileged: "f" # t = true (privileged account); f = false (app-to-app account)
+        # if synchronize="t" then passwordViewPolicyId=1015 otherwise 1000 (based on Chad's bash script)
+        passwordViewPolicyId: "1000" # "id":"1000","name":"Default"
+        attributes:
+          descriptor1: "TEAM"
+          descriptor2: ""
+          extensionType: "windows"
+          passwordChangeMethod: ""
+          verifyThroughOtherAccount: "false"
+          useOtherAccountToChangePassword: "false"
+          userGroup: "CN=Systems_Authentication,OU=Groups,OU=Global,DC=example,DC=com"
+      -
+        accountName: "hcladmin"
+        description1: "TEAM"
+        description2: ""
+        password: "{{ capam_password_hcladmin }}"
+        synchronize: "f" # t = true (sync password); f = false (default); not available for 'Generic' target applications
+        privileged: "f" # t = true (privileged account); f = false (app-to-app account)
+        passwordViewPolicyId: "1000" # "id":"1000","name":"Default"
+        # if synchronize="t" then passwordViewPolicyId=1007 otherwise 1000 (based on Chad's bash script)
+        attributes:
+          descriptor1: "TEAM"
+          descriptor2: ""
+          extensionType: "windows"
+          passwordChangeMethod: ""
+          verifyThroughOtherAccount: "false"
+          useOtherAccountToChangePassword: "false"
+          userGroup: "CN=Systems_Authentication,OU=Groups,OU=Global,DC=example,DC=com"
+
+capam_password_mistadmin_map:
+ "Microsoft Windows Server 2016 Standard": "{{ capam_password_mistadmin_2016 }}"
+ "Microsoft Windows Server 2012 R2 Standard": "{{ capam_password_mistadmin_2012 }}"
+capam_password_mistadmin_pass: "{{ capam_password_mistadmin_map[ansible_os_name] }}"

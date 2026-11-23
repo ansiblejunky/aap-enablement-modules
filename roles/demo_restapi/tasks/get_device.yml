@@ -1,0 +1,34 @@
+---
+- name: Get zero or more matching devices from CA PAM based on the device name
+  uri:
+    url: "{{ capam_url }}/devices.json?sortBy=%2BdeviceName&limit=0&searchRelationship=AND&fields=*&deviceName={{ inventory_hostname }}"
+  module_defaults: "{{ capam_module_defaults }}"
+  delegate_to: localhost
+  register: _get_results
+
+- name: Show results from API call
+  debug: var=_get_results
+
+- name: Use jinja filter functions to grab unique deviceId values
+  set_fact:
+    _capam_device_id_array: "{{ _get_results.json['devices'] | map(attribute='deviceId') | list | unique }}"
+  when: _get_results.json.totalRows | int >= 0
+
+- name: Show all device IDs
+  debug: var=_capam_device_id_array
+  when: _get_results.json.totalRows | int >= 0
+
+- name: Fail when more than one device was returned
+  fail:
+    msg: "More than 1 device exists in CA PAM when searching with name: {{ inventory_hostname }}"
+  when: _get_results.json.totalRows | int > 1
+
+- name: Set variable when no device is returned
+  set_fact:
+    _capam_device_id: ""
+  when: _get_results.json.totalRows | int == 0
+
+- name: Set variable when only one device is returned
+  set_fact:
+    _capam_device_id: "{{ _capam_device_id_array[0] }}"
+  when: _get_results.json.totalRows | int == 1

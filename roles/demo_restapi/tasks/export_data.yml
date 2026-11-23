@@ -1,0 +1,48 @@
+---
+- name: Get all devices from CA PAM (no limit)
+  uri:
+    url: "{{ capam_url }}/devices.json?sortBy=%2BdeviceName&limit=0"
+    timeout: 300000
+  module_defaults: "{{ capam_module_defaults }}"
+  register: _get_results
+
+- name: Save information to local file
+  copy:
+    content: |
+      Total devices found = {{ _get_results.json.devices|length }}
+        
+      {{ _get_results.json.devices | to_nice_json  }}"
+    dest: "{{ playbook_dir }}/capam_output_devices.json"
+
+- name: Use jinja filter functions to grab unique deviceName values
+  set_fact:
+    _capam_devicename_array: "{{ _get_results.json['devices'] | sort(attribute='deviceName') | map(attribute='deviceName') | list }}"
+  when: _get_results.json.totalRows | int > 0
+
+- name: Save deviceName data to local file
+  copy:
+    content: |
+      Total devices found = {{ _capam_devicename_array|length }}
+        
+      {{ _capam_devicename_array | to_nice_yaml  }}"
+    dest: "{{ playbook_dir }}/capam_output_deviceName.json"
+
+- name: Use jinja filter functions to grab unique domainName values
+  set_fact:
+    _capam_domainname_array: "{{ _get_results.json['devices'] | sort(attribute='domainName') | map(attribute='domainName') | list }}"
+  when: _get_results.json.totalRows | int > 0
+
+- name: Save domainName data to local file
+  copy:
+    content: |
+      Total devices found = {{ _capam_domainname_array|length }}
+        
+      {{ _capam_domainname_array | to_nice_yaml  }}"
+    dest: "{{ playbook_dir }}/capam_output_domainName.json"
+
+# - name: Extract devices with IP address
+#   set_fact:
+#     devices_with_ipaddr: "{{ item }}"
+#   loop: "{{ _get_results.json.devices }}"
+#   when: (item.deviceName | ipaddr) or (item.domainName | ipaddr)
+#   register: _capam_data

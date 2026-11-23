@@ -1,0 +1,21 @@
+---
+# For details on these settings see the following URL
+# https://galaxy.ansible.com/docs/contributing/creating_role.html#role-metadata
+galaxy_info:
+  author: John Wadleigh
+  description: Ansible Role to integrate with CA PAM (Privileged Access Manager) system
+  company: Red Hat
+  license: GPLv3
+  min_ansible_version: 2.9.4
+  github_branch: main
+  galaxy_tags: []
+  platforms:
+    - name: Windows
+      versions:
+        - all
+    - name: EL
+      versions:
+        - all
+        - 7
+
+dependencies: []

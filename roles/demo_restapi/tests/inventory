@@ -1,0 +1,11 @@
+[linux]
+#twauslpdtom0653.app.test.hcscint.net
+# Small Linux Test Server
+twauslpdtom0692.app.test.hcscint.net
+
+[windows]
+#twauswpdsql0660.adhcsctst.net
+# Medium Windows Test Server [IP = ?]
+#twauswpdstd0586.adhcsctst.net
+# Small Windows Test Server [IP = 10.25.25.28]
+bginfrastru1693.adhcsctst.net

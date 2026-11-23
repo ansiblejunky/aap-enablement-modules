@@ -1,0 +1,139 @@
+---
+# This task file has the following input/output parameter requirements.
+# Input:
+#   _account - dictionary containing the account information
+#   _capam_target_application_id - target application ID
+# Output:
+#   Nothing
+
+- debug: var=_capam_target_application_id
+
+# NOTE: The following error can happen but it might mean that the password was incorrect. 
+# PAM-CMN-0467: A Password Authority problem prevented completing the request.
+- name: Add account to target application to CA PAM
+  uri:
+    url: "{{ capam_url }}/devices.json/{{ _capam_device_id }}/targetApplications/{{ _capam_target_application_id }}/targetAccounts"
+    method: POST
+    status_code:
+      - 200
+      - 400
+    body: "{{ _account }}"
+  module_defaults: "{{ capam_module_defaults }}"
+  delegate_to: localhost
+  register: _post_results
+  changed_when: _post_results.status == 200
+  # Do not fail when object already exists (error code PAM-CM-0579)
+  # Do not fail when password is wrong (error code PAM-CM-1341) until later with better "explanation"
+  failed_when: _post_results.status == 400 and
+               _post_results.content.find('PAM-CM-0579') == -1 and
+               _post_results.content.find('PAM-CM-1341') == -1
+
+- fail:
+    msg: "Password provided for account '{{ _account.accountName }}' was incorrect! CA PAM could not login using that password."
+  when: _post_results.status == 400 and
+        _post_results.content.find('PAM-CM-1341') > 0
+
+- debug: var=_post_results
+
+- name: Get account ID
+  include_tasks: "get_account.yml"
+  vars:
+    _capam_account_name: "{{ _account.accountName }}"
+
+- debug: var=_capam_account_id
+
+- name: Get access method ID
+  include_tasks: "get_access_method.yml"
+- name: Display access method ID
+  debug: var=_capam_access_method_id
+
+################################################################################
+# Create access policy
+#
+# Provision a policy association between the specified user/group and device/group. The specified policy data must
+# provide a value for at least one of the following fields: 
+#     accessMethods, services, vpnServices, targetAccounts
+# Optional fields:
+#     cliRecording or bidirectionCLIRecording - may be set to `t` if any of the SSH, Telnet, Serial, TN3270, TN3270SSL, TN5250, TN5250 SSL access methods are selected, or if any TCP/UDP service is selected where the application protocol is SSH or Telnet.
+#     graphicalRecording - may be set to `t` if the RDP, VNC, or Embedded VNC applets are selected, or if any TCP/UDP service is selected which has an application protocol of RDP or VNC.
+#     webPortalRecording - may be set to `t` if any service that has an application protocol of Web Portal is selected.
+
+- name: Get user group ID
+  include_tasks: "get_user_group.yml"
+  vars:
+    _capam_user_group_name: "{{ _account.attributes.userGroup }}"
+
+- debug: var=_capam_user_group_id
+- debug: var=_capam_account_id
+- debug: var=_capam_device_id
+- debug: var=_capam_access_method_id
+
+- name: Windows - Create access policy for device on CA PAM
+  uri:
+    url: "{{ capam_url }}/policies.json/{{ _capam_user_group_id }}/{{ _capam_device_id }}/"
+    method: POST
+    status_code:
+      - 200
+      - 400
+    body:
+      services: null
+      accessMethods:
+        -
+          accessMethodId: "{{ _capam_access_method_id }}"
+          accountIds: ["{{ _capam_account_id }}"]
+      enableServerControlLogin: null
+      graphicalRecording: "t"
+      targetAccounts: ["{{ _capam_account_id }}"]
+  module_defaults: "{{ capam_module_defaults }}"
+  delegate_to: localhost
+  register: _post_results
+  changed_when: _post_results.status == 200
+  when: (ansible_os_family | lower) == "windows"
+  # Do not fail when object already exists (error code PAM-CMN-0773)
+  failed_when: _post_results.status == 400 and
+               _post_results.content.find('PAM-CMN-0773') == -1
+
+- name: Linux - Create access policy for device on CA PAM
+  uri:
+    url: "{{ capam_url }}/policies.json/{{ _capam_user_group_id }}/{{ _capam_device_id }}/"
+    method: POST
+    status_code:
+      - 200
+      #- 400
+    body:
+      services:
+        -
+          serviceId: 100
+          accountIds:
+            - "{{ _capam_account_id }}"
+        -
+          serviceId: 101
+          accountIds:
+            - "{{ _capam_account_id }}"
+        -
+          serviceId: 102
+          accountIds:
+            - "{{ _capam_account_id }}"
+        -
+          serviceId: 103
+          accountIds:
+            - "{{ _capam_account_id }}"
+        -
+          serviceId: 106
+          accountIds:
+            - "{{ _capam_account_id }}"
+      accessMethods:
+        -
+          accessMethodId: "{{ _capam_access_method_id }}"
+          accountIds: ["{{ _capam_account_id }}"]
+      bidirectionCLIRecording: "t"
+      cliRecording: "t"
+      targetAccounts: ["{{ _capam_account_id }}"]
+  module_defaults: "{{ capam_module_defaults }}"
+  delegate_to: localhost
+  register: _post_results
+  changed_when: _post_results.status == 200
+  when: (ansible_os_family | lower) == "redhat"
+  # Do not fail when object already exists (error code PAM-CMN-0773)
+  failed_when: _post_results.status == 400 and
+               _post_results.content.find('PAM-CMN-0773') == -1

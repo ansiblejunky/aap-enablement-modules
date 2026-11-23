@@ -1,0 +1,26 @@
+---
+# This task file has the following input/output parameter requirements.
+# Input:
+#   _capam_device_id
+#   _capam_target_application_id
+#   _capam_account_name
+# Output:
+#   _capam_account_id
+
+- name: Get account
+  uri:
+    url: "{{ capam_url }}/devices.json/{{ _capam_device_id }}/targetApplications/{{ _capam_target_application_id }}/targetAccounts?accountName={{ _capam_account_name }}"
+  module_defaults: "{{ capam_module_defaults }}"
+  delegate_to: localhost
+  register: _get_results
+
+- name: Fail when no record was returned
+  fail:
+    msg: "No records returned in CA PAM when searching for accounts"
+  when: _get_results.json | length == 0
+
+- name: Get account ID
+  set_fact:
+    _capam_account_id: "{{ _get_results.json[0]['accountId']  }}"
+
+- debug: var=_capam_account_id

@@ -1,0 +1,27 @@
+---
+# This task file has the following input/output parameter requirements.
+# Input:
+#   _capam_device_id
+#   _capam_target_application_name
+# Output:
+#   _capam_target_application_id
+
+# TODO: use multiline syntax for the `url:` parameters
+- name: Get zero or more target applications from CA PAM based for a specific device
+  uri:
+    url: "{{ capam_url }}/devices.json/{{ _capam_device_id }}/targetApplications?sortBy=%2BapplicationName&fields=*&applicationName={{ _capam_target_application_name }}"
+  module_defaults: "{{ capam_module_defaults }}"
+  delegate_to: localhost
+  register: _get_results
+
+- name: Show results from API call
+  debug: var=_get_results
+
+- name: Fail when more than one policy was returned
+  fail:
+    msg: "More than 1 record returned in CA PAM when searching with application name: {{ _capam_target_application_name }}"
+  when: _get_results.json | length > 1
+
+- name: Extract and set the target application ID
+  set_fact:
+    _capam_target_application_id: "{{ _get_results.json[0].id }}"

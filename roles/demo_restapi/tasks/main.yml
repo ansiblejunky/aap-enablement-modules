@@ -1,0 +1,4 @@
+---
+- name: Fail when role is improperly called
+  fail:
+    msg: Please use the supported API described in the README.md

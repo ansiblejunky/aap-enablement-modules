@@ -1,0 +1,16 @@
+---
+- name: Unit tests for CA PAM 
+  hosts: all
+  gather_facts: true
+
+  tasks:
+
+  - name: TEST - Add server to CA PAM
+    include_role:
+      name: ../../ansible-CA_PAM
+      tasks_from: "server_add.yml"
+
+  - name: TEST - Delete server from CA PAM
+    include_role:
+      name: ../../ansible-CA_PAM
+      tasks_from: "server_delete.yml"

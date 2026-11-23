@@ -1,0 +1,20 @@
+---
+- name: Get existing devices
+  include_tasks: "get_device.yml"
+
+- debug: var=_capam_device_id
+
+- name: Delete device from CA PAM
+  uri:
+    url: "{{ capam_url }}/devices.json/{{ _capam_device_id }}/"
+    method: DELETE
+    status_code:
+      - 204
+      - 400
+  module_defaults: "{{ capam_module_defaults }}"
+  delegate_to: localhost
+  register: _delete_results
+  changed_when: _delete_results.status == 204
+  when: not _capam_device_id == ""
+
+- debug: var=_delete_results

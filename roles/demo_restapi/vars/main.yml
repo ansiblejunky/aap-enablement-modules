@@ -1,0 +1,19 @@
+---
+# vars file - define private variables used internally by ansible role
+
+capam_url: "https://{{ capam_server }}/api.php/v1"
+
+capam_module_defaults:
+  uri:
+    method: GET
+    user: "{{ capam_server_user }}"
+    password: "{{ capam_server_password }}"
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    return_content: yes
+    force_basic_auth: yes
+    validate_certs: no
+    status_code:
+      - 200
+    body_format: json

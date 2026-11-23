@@ -1,0 +1,24 @@
+---
+# This task file has the following input/output parameter requirements.
+# Input:
+#   _capam_device_id
+# Output:
+#   _capam_access_method_id
+
+- name: Get all access methods
+  uri:
+    url: "{{ capam_url }}/devices.json/{{ _capam_device_id }}/accessMethods"
+  module_defaults: "{{ capam_module_defaults }}"
+  delegate_to: localhost
+  register: _get_results
+
+- name: Fail when no record was returned
+  fail:
+    msg: "No records returned in CA PAM when searching for access methods"
+  when: _get_results.json | length == 0
+
+- name: Get access method ID
+  set_fact:
+    _capam_access_method_id: "{{ _get_results.json[0]['id']  }}"
+
+- debug: var=_capam_access_method_id

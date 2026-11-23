@@ -1,0 +1,33 @@
+---
+# This task file has the following input/output parameter requirements.
+# Input:
+#   _capam_user_group_name
+# Output:
+#   _capam_user_group_id
+
+- name: Get user groups
+  uri:
+    url: "{{ capam_url }}/userGroups.json?sortBy=%2BgroupName&limit=200&searchRelationship=AND&fields=groupId%2Cdescription%2CgroupName%2CauthType%2CshortName%2CprovisionType"
+  module_defaults: "{{ capam_module_defaults }}"
+  delegate_to: localhost
+  register: _get_results
+
+- name: Fail when no record was returned
+  fail:
+    msg: "No records returned in CA PAM when searching with user group name: {{ _capam_user_group_name }}"
+  when: _get_results.json['groups'] | length == 0
+
+- name: Find the proper user group ID since GET operation searches by substring and not exact match
+  set_fact:
+    _capam_user_group_item: "{{ _get_results.json['groups'] | selectattr('groupName', 'equalto', _capam_user_group_name) | list | default([]) }}"
+
+- name: Fail when the exact user group name was not found in returned results
+  fail:
+    msg: "Exact user group name was not found in returned results from CA PAM when searching with name: {{ _capam_user_group_name }}"
+  when: _capam_user_group_item | length == 0
+
+- name: Get user group ID from matching group
+  set_fact:
+    _capam_user_group_id: "{{ _capam_user_group_item[0]['groupId']  }}"
+
+- debug: var=_capam_user_group_id

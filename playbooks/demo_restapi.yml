@@ -1,0 +1,10 @@
+---
+- name: Example playbook demonstrating the integration of external system using RESTAPI
+  hosts: all
+  connection: local
+
+  tasks:
+    - name: Perform action against external system
+      ansible.builtin.include_role:
+        name: demo_restapi
+        tasks_from: get_device

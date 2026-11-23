@@ -1,0 +1,21 @@
+---
+# defaults file - define public variables that users can override
+
+# CA PAM server information
+capam_server: 'capam.example.com'
+capam_server_user: 'username'
+capam_server_password: 'password'
+# Force option will delete the device from CA PAM before adding to CA PAM
+capam_force: true
+# Defines the device groups that windows servers should join; every environment has a different set of groups
+capam_windows_device_groups: ["5","15648"]
+# Defines the physical location of the device {Waukegan = waukegan data center; Azure}
+capam_server_location: location
+
+# PASSWORDS - see README.md in this role for details and check our ansible-playbooks repo for real values
+# CA PAM Linux passwords - beware of different root pswd for HTC vs Azure
+capam_password_root: 'password'
+# CA PAM Windows passwords
+capam_password_hcladmin: 'password'
+capam_password_mistadmin_2012: 'password'
+capam_password_mistadmin_2016: 'password'

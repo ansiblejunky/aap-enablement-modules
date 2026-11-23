@@ -1,0 +1,35 @@
+---
+- debug: var=_capam_device_id
+
+- name: Add target application to CA PAM
+  uri:
+    url: "{{ capam_url }}/devices.json/{{ _capam_device_id }}/targetApplications"
+    method: POST
+    status_code:
+      - 200
+      - 400
+    body: "{{ item.application }}"
+  module_defaults: "{{ capam_module_defaults }}"
+  delegate_to: localhost
+  register: _post_results
+  changed_when: _post_results.status == 200
+  # Do not fail when object already exists (error code PAM-CMN-0509)
+  failed_when: _post_results.status == 400 and
+               _post_results.content.find('PAM-CMN-0509') == -1
+
+- debug: var=_post_results
+
+- debug: var=_capam_device_id
+
+- name: Get target application ID using application name
+  include_tasks: "get_target_application.yml"
+  vars:
+    _capam_target_application_name: "{{ item.application.applicationName }}"
+
+- debug: var=_capam_target_application_id
+
+- name: Create accounts for target application
+  include_tasks: "create_account.yml"
+  loop: "{{ item.accounts }}"
+  loop_control:
+    loop_var: _account

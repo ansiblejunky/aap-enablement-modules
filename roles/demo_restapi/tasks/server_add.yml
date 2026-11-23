@@ -1,0 +1,42 @@
+---
+- name: Include OS-specific vars
+  include_vars: "{{ ansible_os_family | lower }}.yml"
+
+- name: Brute force option - delete device before attempting to add it to CA PAM
+  include_tasks: "server_delete.yml"
+  when: capam_force | bool == true
+
+- name: Add device to CA PAM
+  uri:
+    url: "{{ capam_url }}/devices.json"
+    method: POST
+    status_code:
+      - 200
+      - 400
+    body: "{{ capam_device }}"
+  module_defaults: "{{ capam_module_defaults }}"
+  delegate_to: localhost
+  register: _post_results
+  changed_when: _post_results.status == 200
+  # Do not fail when object already exists (error code PAM-CMN-0333)
+  failed_when: _post_results.status == 400 and
+               _post_results.content.find('PAM-CMN-0333') == -1
+
+- name: Show results from REST API call
+  debug: var=_post_results
+
+- name: Extract the device ID from results
+  set_fact:
+    _capam_device_id: "{{ _post_results.json }}"
+  when: _post_results.status == 200
+
+- name: Get existing device
+  include_tasks: "get_device.yml"
+  when: _post_results.status == 400
+
+- name: Display the device ID
+  debug: var=_capam_device_id
+
+- name: Add target applications to CA PAM
+  include_tasks: "create_target_application.yml"
+  loop: "{{ capam_target_applications }}"
